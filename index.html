@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="记录实习经历、学习心得、技术沉淀、项目复盘和面试素材的暖色系个人博客。" />
+  <title>Internship Blog · 实习成长档案</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Serif+SC:wght@500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <div class="grain"></div>
+
+  <header class="site-header" id="top">
+    <nav class="nav-shell" aria-label="主导航">
+      <a class="brand" href="#top" aria-label="回到首页">
+        <span class="brand-mark">IB</span>
+        <span class="brand-copy">
+          <strong>Internship Blog</strong>
+          <small>实习 · 技术 · 面试复盘</small>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-label="打开导航菜单">☰</button>
+      <div class="nav-links">
+        <a href="#journal">实习记录</a>
+        <a href="#tech">技术沉淀</a>
+        <a href="#gallery">图片证据墙</a>
+        <a href="#timeline">成长时间线</a>
+        <a href="#interview">面试素材</a>
+      </div>
+    </nav>
+
+    <section class="hero section-shell">
+      <div class="hero-copy reveal">
+        <span class="eyebrow">Warm archive for future interviews</span>
+        <h1>把实习里的每一次踩坑、学习和成长，都变成未来面试能讲清楚的故事。</h1>
+        <p>
+          这里不只是写日记。它会帮你沉淀项目背景、技术决策、问题定位、解决过程、结果证据、STAR 事例和复盘材料。
+          半年后准备简历，不用靠临场回忆硬憋。
+        </p>
+        <div class="hero-actions">
+          <a class="btn primary magnet" href="#quick-note">写一条今日记录</a>
+          <a class="btn ghost magnet" href="#gallery">上传实习图片</a>
+        </div>
+      </div>
+
+      <aside class="hero-visual reveal" aria-label="实习博客视觉插图">
+        <div class="hero-card glass tilt-card">
+          <div class="card-topline">
+            <span>Yu Fan's Internship Map</span>
+            <span class="live-dot"></span>
+          </div>
+          <div class="mini-window">
+            <div class="window-dots"><i></i><i></i><i></i></div>
+            <div class="code-lines">
+              <span style="--w: 88%"></span>
+              <span style="--w: 62%"></span>
+              <span style="--w: 78%"></span>
+              <span style="--w: 44%"></span>
+            </div>
+          </div>
+          <div class="stat-grid">
+            <div><strong id="statPosts">0</strong><small>篇记录</small></div>
+            <div><strong id="statProjects">0</strong><small>项目/任务</small></div>
+            <div><strong id="statTechs">0</strong><small>技术关键词</small></div>
+          </div>
+        </div>
+        <img class="hero-illustration floaty" src="assets/internship-hero.svg" alt="暖色系实习记录插图" />
+      </aside>
+    </section>
+  </header>
+
+  <main>
+    <section class="section-shell intro-grid reveal">
+      <article class="intro-copy">
+        <span class="section-kicker">Recording System</span>
+        <h2>按“以后能讲出来”设计，而不是只按日期堆日记</h2>
+      </article>
+      <div class="principle-grid">
+        <article class="principle-card glass">
+          <span>01</span>
+          <h3>任务背景</h3>
+          <p>记录需求、约束、目标和你负责的边界，避免以后只记得“我写过代码”。</p>
+        </article>
+        <article class="principle-card glass">
+          <span>02</span>
+          <h3>技术决策</h3>
+          <p>写清为什么选这个方案、放弃了什么方案，这是面试里最容易拉开差距的部分。</p>
+        </article>
+        <article class="principle-card glass">
+          <span>03</span>
+          <h3>结果证据</h3>
+          <p>保留截图、数据、指标、测试方法，让经历从“描述”变成“证明”。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-shell section" id="journal">
+      <div class="section-heading reveal">
+        <span class="section-kicker">Journal Wall</span>
+        <h2>实习记录墙</h2>
+        <p>可以搜索标题、标签、技术关键词；也可以按类型筛选，快速找到之后写简历能用的材料。</p>
+      </div>
+      <div class="toolbar reveal">
+        <label class="search-box">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="搜索：STM32、PID、调试、周报、项目复盘..." />
+        </label>
+        <div class="filter-chips" id="filterChips" aria-label="记录筛选"></div>
+      </div>
+      <div class="post-grid" id="postGrid" aria-live="polite"></div>
+    </section>
+
+    <section class="section-shell section warm-panel" id="tech">
+      <div class="section-heading reveal">
+        <span class="section-kicker">Tech Garden</span>
+        <h2>技术沉淀区</h2>
+        <p>把学过的技术拆成“会用、会调、会解释、会优化”四个层级，避免面试时只会报菜名。</p>
+      </div>
+      <div class="tech-layout">
+        <div class="tech-cloud reveal" id="techCloud"></div>
+        <article class="skill-board reveal">
+          <div class="board-header">
+            <span>Skill Maturity</span>
+            <strong>成长看板</strong>
+          </div>
+          <div class="skill-row"><span>能跑通 Demo</span><div class="bar"><i style="--w: 92%"></i></div></div>
+          <div class="skill-row"><span>能定位 Bug</span><div class="bar"><i style="--w: 76%"></i></div></div>
+          <div class="skill-row"><span>能讲清原理</span><div class="bar"><i style="--w: 63%"></i></div></div>
+          <div class="skill-row"><span>能做性能优化</span><div class="bar"><i style="--w: 48%"></i></div></div>
+          <p>建议每周更新一次：不要只写“学了什么”，要写“我现在能独立完成什么”。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-shell section" id="gallery">
+      <div class="section-heading reveal">
+        <span class="section-kicker">Image Evidence Wall</span>
+        <h2>图片证据墙</h2>
+        <p>把实习截图、流程图、实验照片、波形图、演示结果都放进来。面试讲项目时，有图就有底气。</p>
+      </div>
+      <div class="gallery-layout reveal">
+        <form class="image-uploader glass" id="imageForm">
+          <div class="drop-zone" id="dropZone">
+            <input id="imageInput" type="file" accept="image/*" />
+            <span class="upload-icon">✦</span>
+            <strong>拖拽图片到这里，或点击选择</strong>
+            <small>图片会保存到浏览器本地，用来做复盘证据墙。</small>
+          </div>
+          <label>
+            图片说明
+            <input id="imageCaption" type="text" placeholder="例如：串口波形截图 / PID 调参前后对比 / 项目架构图" />
+          </label>
+          <button class="btn primary" type="submit">加入证据墙</button>
+        </form>
+        <div class="gallery-grid" id="galleryGrid"></div>
+      </div>
+    </section>
+
+    <section class="section-shell section" id="timeline">
+      <div class="section-heading reveal">
+        <span class="section-kicker">Growth Timeline</span>
+        <h2>实习成长时间线</h2>
+        <p>把零散日记串成阶段成果：入门、接任务、独立排错、形成方法论。</p>
+      </div>
+      <div class="timeline-editor glass reveal">
+        <form id="timelineForm" class="timeline-form">
+          <input type="hidden" name="id" />
+          <label>阶段时间<input name="date" placeholder="例如：第 1 周 / 2026-06-19" required /></label>
+          <label>阶段标题<input name="title" placeholder="例如：搭建 DevSpace 本地连接" required /></label>
+          <label class="wide">阶段细节<textarea name="detail" rows="3" placeholder="写清楚：做了什么、解决了什么、留下了什么证据。" required></textarea></label>
+          <div class="timeline-form-actions">
+            <button class="btn primary" type="submit">保存到时间线</button>
+            <button class="btn ghost" id="resetTimeline" type="button">恢复默认模板</button>
+          </div>
+        </form>
+      </div>
+      <div class="timeline" id="timelineList"></div>
+    </section>
+
+    <section class="section-shell section" id="quick-note">
+      <div class="section-heading reveal">
+        <span class="section-kicker">Quick Note</span>
+        <h2>今日速记</h2>
+        <p>这个表单会保存到浏览器本地，适合先记灵感；正式归档建议整理进 <code>data/entries.js</code>。</p>
+      </div>
+      <div class="note-app glass reveal">
+        <form id="quickNoteForm" class="note-form">
+          <label>标题<input name="title" placeholder="例如：完成串口调试并定位 DMA 半传输问题" required /></label>
+          <label>类型<select name="type"><option>实习日报</option><option>学习心得</option><option>技术笔记</option><option>项目复盘</option><option>面试素材</option></select></label>
+          <label>内容<textarea name="body" rows="5" placeholder="今天做了什么？卡在哪里？我如何排查？结果怎么证明？"></textarea></label>
+          <button class="btn primary" type="submit">保存到本地速记</button>
+        </form>
+        <div class="local-notes" id="localNotes"></div>
+      </div>
+    </section>
+
+    <section class="section-shell section interview-section" id="interview">
+      <div class="section-heading reveal">
+        <span class="section-kicker">Interview Memory Bank</span>
+        <h2>面试素材库</h2>
+        <p>提前把经历翻译成面试官听得懂的问题、行动和结果。以后写简历会轻松很多。</p>
+      </div>
+      <div class="interview-grid reveal">
+        <article class="story-card glass">
+          <span class="story-label">STAR</span>
+          <h3>一次困难调试</h3>
+          <ul>
+            <li><strong>S：</strong>在什么场景下出现问题？影响范围是什么？</li>
+            <li><strong>T：</strong>你负责定位哪一层？硬件、驱动、算法还是通信？</li>
+            <li><strong>A：</strong>你用了哪些日志、波形、断点、对比实验？</li>
+            <li><strong>R：</strong>最终指标提升多少？有没有沉淀文档或工具？</li>
+          </ul>
+        </article>
+        <article class="story-card accent glass">
+          <span class="story-label">Project Pitch</span>
+          <h3>一个完整项目</h3>
+          <p>用“目标 → 架构 → 关键模块 → 难点 → 验证 → 复盘”六句话讲完，别一上来陷进代码细节。</p>
+          <button class="copy-btn" data-copy="项目目标：\n系统架构：\n我负责的模块：\n最难的问题：\n我的解决方案：\n验证结果/数据：\n复盘改进：" type="button">复制项目表达模板</button>
+        </article>
+        <article class="story-card glass">
+          <span class="story-label">Questions</span>
+          <h3>高频追问清单</h3>
+          <ol>
+            <li>为什么不用更简单或更成熟的方案？</li>
+            <li>这个 Bug 你怎么排除偶然性？</li>
+            <li>你的优化有没有量化对比？</li>
+            <li>如果时间更多，你会怎么重构？</li>
+          </ol>
+        </article>
+      </div>
+
+      <div class="question-bank glass reveal">
+        <div class="question-bank-head">
+          <div>
+            <span class="section-kicker">Question Log</span>
+            <h3>面试问题记录</h3>
+            <p>把面试官可能追问你的问题提前存起来：问题、回答思路、证据、关键词，以后复习不用临时现编。</p>
+          </div>
+        </div>
+        <form id="questionForm" class="question-form">
+          <label>问题类型
+            <select name="category">
+              <option>项目追问</option>
+              <option>技术原理</option>
+              <option>调试排错</option>
+              <option>方案取舍</option>
+              <option>团队协作</option>
+              <option>个人成长</option>
+            </select>
+          </label>
+          <label>面试问题<input name="question" placeholder="例如：你怎么证明这个 Bug 不是偶发现象？" required /></label>
+          <label class="wide">回答思路<textarea name="answer" rows="3" placeholder="按 背景 → 方法 → 证据 → 复盘 来写。"></textarea></label>
+          <label>关联证据<input name="evidence" placeholder="例如：日志截图、波形图、提交记录、测试数据" /></label>
+          <label>关键词<input name="tags" placeholder="例如：DevSpace MCP Cloudflare 排错" /></label>
+          <button class="btn primary" type="submit">新增面试问题</button>
+        </form>
+        <div class="question-list" id="questionList"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer section-shell">
+    <div>
+      <strong>Internship Blog</strong>
+      <p>愿每一次笨拙调试，都能变成以后讲得漂亮的成长证据。</p>
+    </div>
+    <a href="#top">回到顶部 ↑</a>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="data/entries.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
