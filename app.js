@@ -345,10 +345,21 @@ function setupQuickNotes() {
   const list = $("#localNotes");
   if (!form || !list) return;
 
+  const todayPrefix = () => new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" }).format(new Date());
+  const isTodayNote = (note) => {
+    if (note.createdAt) {
+      const createdAt = new Date(note.createdAt);
+      return !Number.isNaN(createdAt.getTime()) && createdAt.toDateString() === new Date().toDateString();
+    }
+    return String(note.date || "").startsWith(todayPrefix());
+  };
+
   const render = () => {
-    const notes = loadJson(storageKeys.notes, []);
+    const allNotes = loadJson(storageKeys.notes, []);
+    const notes = allNotes.filter(isTodayNote);
     if (!notes.length) {
-      list.innerHTML = `<div class="empty-state">还没有本地速记。先写一条“今天做了什么 + 遇到什么问题 + 结果证据”。</div>`;
+      const hiddenCount = allNotes.length;
+      list.innerHTML = `<div class="empty-state">${hiddenCount ? `今天还没有本地速记，已自动隐藏 ${hiddenCount} 条过往记录。` : "还没有本地速记。先写一条“今天做了什么 + 遇到什么问题 + 结果证据”。"}</div>`;
       return;
     }
     list.innerHTML = notes.map((note) => `
@@ -360,8 +371,9 @@ function setupQuickNotes() {
           </div>
           <time>${escapeHtml(note.date || "")}</time>
         </header>
-        <div class="note-body-rich">${formatNoteBody(note.body)}</div>
+        <div class="note-body-rich is-collapsed" id="note-body-${escapeHtml(note.id)}">${formatNoteBody(note.body)}</div>
         <div class="note-actions">
+          <button type="button" data-note-toggle="${escapeHtml(note.id)}" aria-expanded="false" aria-controls="note-body-${escapeHtml(note.id)}">展开</button>
           <button type="button" data-note-id="${escapeHtml(note.id)}">删除</button>
         </div>
       </article>
@@ -372,12 +384,14 @@ function setupQuickNotes() {
     event.preventDefault();
     const formData = new FormData(form);
     const notes = loadJson(storageKeys.notes, []);
+    const now = new Date();
     notes.unshift({
       id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
       title: formData.get("title"),
       type: formData.get("type"),
       body: formData.get("body"),
-      date: new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date())
+      date: new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(now),
+      createdAt: now.toISOString()
     });
     saveJson(storageKeys.notes, notes);
     form.reset();
@@ -386,6 +400,17 @@ function setupQuickNotes() {
   });
 
   list.addEventListener("click", (event) => {
+    const toggle = event.target.closest("button[data-note-toggle]");
+    if (toggle) {
+      const body = $(`#note-body-${CSS.escape(toggle.dataset.noteToggle)}`);
+      if (!body) return;
+      const expanded = toggle.getAttribute("aria-expanded") === "true";
+      body.classList.toggle("is-collapsed", expanded);
+      toggle.setAttribute("aria-expanded", String(!expanded));
+      toggle.textContent = expanded ? "展开" : "收起";
+      return;
+    }
+
     const button = event.target.closest("button[data-note-id]");
     if (!button) return;
     const notes = loadJson(storageKeys.notes, []).filter((note) => note.id !== button.dataset.noteId);
