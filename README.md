@@ -73,7 +73,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\archive-daily-note.ps1 -NoteDat
 
 它会把 `data/daily-notes/2026-06-19.md` 自动写入 `data/entries.js`，并在 `data/backups/` 里备份旧版 `entries.js`。
 
-### 安装每天凌晨 4 点自动归档
+### 安装每天凌晨 4 点自动归档并上传 GitHub
 
 在项目根目录打开 PowerShell，运行：
 
@@ -87,10 +87,22 @@ powershell -ExecutionPolicy Bypass -File .\tools\install-nightly-archive-task.ps
 InternshipBlogDailyArchive
 ```
 
-默认每天凌晨 4 点归档“前一天”的 Markdown 速记。例如 6 月 21 日凌晨 4 点，会尝试归档：
+默认每天凌晨 4 点归档“前一天”的 Markdown 速记，然后自动执行 `git add -A`、提交和 `git push origin main`。例如 6 月 21 日凌晨 4 点，会尝试归档：
 
 ```text
 data/daily-notes/2026-06-20.md
+```
+
+任务运行日志会写到：
+
+```text
+logs/nightly-archive.log
+```
+
+手动测试完整夜间流程：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\run-nightly-update.ps1 -NoteDate 2026-06-19
 ```
 
 取消这个本地计划任务：
