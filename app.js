@@ -342,6 +342,12 @@ function getArchiveSummary(note) {
   return body ? body.slice(0, 90) : `记录 ${note.title || "今日速记"} 的学习和实习过程。`;
 }
 
+function getArchiveResult(note) {
+  const title = String(note.title || "").trim();
+  const type = String(note.type || "速记").trim();
+  return title ? `已整理为${type}：${title}` : `已整理为${type}归档`;
+}
+
 function getMarkdownLinesForNote(note) {
   const date = getNoteDate(note);
   const time = getLocalTimeText(date);
@@ -376,7 +382,7 @@ function buildDailyNoteMarkdown(note) {
 - 类型：${type}
 - 项目：实习记录
 - 标签：${type}，浏览器速记，实习记录
-- 结果：已保存为本地 Markdown 归档，等待自动整理上传
+- 结果：${getArchiveResult(note)}
 - 摘要：${summary}
 
 ## 今天做了什么
@@ -385,11 +391,9 @@ ${noteBlock}
 
 ## 遇到的问题
 
--
 
 ## 解决过程
 
--
 
 ## 结果证据
 
@@ -397,11 +401,9 @@ ${noteBlock}
 
 ## 面试可讲
 
--
 
 ## 下一步
 
--
 `;
 }
 
@@ -433,6 +435,12 @@ function appendLinesToMarkdownSection(text, heading, lines) {
 
 function mergeNoteIntoDailyMarkdown(oldText, note) {
   if (!String(oldText || "").trim()) return buildDailyNoteMarkdown(note);
+  const noteId = String(note.id || "");
+  if (noteId && String(oldText).includes(`<!-- QUICK-NOTE:${noteId} START -->`)) return oldText;
+
+  const plainLines = getMarkdownLinesForNote(note).join("\n");
+  if (String(oldText).includes(plainLines)) return oldText;
+
   return appendLinesToMarkdownSection(oldText, "今天做了什么", [getMarkdownBlockForNote(note)]);
 }
 
