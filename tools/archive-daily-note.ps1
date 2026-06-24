@@ -44,13 +44,14 @@ function Get-SectionItems([string]$Text, [string]$Heading) {
   if (-not $body) { return @() }
 
   $items = New-Object System.Collections.Generic.List[string]
+  $seen = New-Object 'System.Collections.Generic.HashSet[string]'
   foreach ($line in ($body -split "\r?\n")) {
     $value = $line.Trim()
     if (-not $value) { continue }
     if ($value -match "^<!--\s*QUICK-NOTE:.*-->$") { continue }
     $value = [regex]::Replace($value, "^\s*(?:[-*+]\s+|\d{1,2}[、，,.．)）]\s*)", "")
     if (-not $value -or $value -eq "-") { continue }
-    if ($value) { $items.Add($value) }
+    if ($value -and $seen.Add($value)) { $items.Add($value) }
   }
   return @($items)
 }

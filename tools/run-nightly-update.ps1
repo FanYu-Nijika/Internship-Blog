@@ -24,7 +24,9 @@ if ($logDir -and -not (Test-Path $logDir)) {
 
 function Write-Log([string]$Message) {
   $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-  "[$stamp] $Message" | Tee-Object -FilePath $LogPath -Append
+  $line = "[$stamp] $Message"
+  Write-Host $line
+  Add-Content -Path $LogPath -Value $line -Encoding UTF8
 }
 
 function Invoke-LoggedCommand([string]$FilePath, [string[]]$Arguments) {

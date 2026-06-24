@@ -201,7 +201,10 @@ function setupTimelineEditor() {
     const nextItems = existed
       ? items.map((item) => item.id === nextItem.id ? nextItem : item)
       : [...items, nextItem];
-    saveJson(storageKeys.timeline, nextItems);
+    if (!saveJson(storageKeys.timeline, nextItems)) {
+      toast("浏览器本地空间不足，时间线没有保存");
+      return;
+    }
     renderTimeline();
     resetForm();
     toast(existed ? "时间线已更新" : "已加入成长时间线");
@@ -222,7 +225,10 @@ function setupTimelineEditor() {
       const nextItems = defaultIds.has(id)
         ? [...savedItems.filter((current) => current.id !== id), { ...item, deleted: true }]
         : savedItems.filter((current) => current.id !== id);
-      saveJson(storageKeys.timeline, nextItems);
+      if (!saveJson(storageKeys.timeline, nextItems)) {
+        toast("浏览器本地空间不足，删除状态没有保存");
+        return;
+      }
       renderTimeline();
       toast("已删除这个时间线节点");
       return;
@@ -268,7 +274,12 @@ function loadJson(key, fallback) {
 }
 
 function saveJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function openArchiveDb() {
@@ -484,7 +495,35 @@ function escapeHtml(value = "") {
 }
 
 function formatInlineText(text = "") {
-  const tokenPattern = /(https?:\/\/[^\s，。；、)）]+|[A-Za-z]:\\[^，。；\n]+|`[^`]+`|\b(?:DevSpace|Cloudflare Tunnel|trycloudflare\.com|ChatGPT|OAuth|MCP|JSON|BOM|allowedRoots|cloudflared|config\.json|Owner password|token)\b)/gi;
+  const keywordTokens = [
+    "DevSpace",
+    "Cloudflare Tunnel",
+    "trycloudflare\\.com",
+    "ChatGPT",
+    "OAuth",
+    "MCP",
+    "JSON",
+    "BOM",
+    "allowedRoots",
+    "cloudflared",
+    "config\\.json",
+    "Owner password",
+    "token",
+    "SolidWorks",
+    "solidworks-pro",
+    "bcr_arm",
+    "STM32",
+    "STC32G",
+    "PID",
+    "PWM",
+    "DMA",
+    "UART",
+    "Keil",
+    "C251",
+    "GitHub",
+    "File System Access API"
+  ];
+  const tokenPattern = new RegExp(`(https?:\\/\\/[^\\s，。；、)）]+|[A-Za-z]:\\\\[^，。；\\n]+|\`[^\`]+\`|\\b(?:${keywordTokens.join("|")})\\b)`, "gi");
   return String(text).split(tokenPattern).map((part) => {
     if (!part) return "";
     if (/^https?:\/\//i.test(part)) {
@@ -493,7 +532,7 @@ function formatInlineText(text = "") {
     if (/^[A-Za-z]:\\/.test(part) || /^`[^`]+`$/.test(part)) {
       return `<code class="note-code">${escapeHtml(part.replace(/^`|`$/g, ""))}</code>`;
     }
-    if (/^(DevSpace|Cloudflare Tunnel|trycloudflare\.com|ChatGPT|OAuth|MCP|JSON|BOM|allowedRoots|cloudflared|config\.json|Owner password|token)$/i.test(part)) {
+    if (new RegExp(`^(?:${keywordTokens.join("|")})$`, "i").test(part)) {
       return `<span class="note-keyword">${escapeHtml(part)}</span>`;
     }
     return escapeHtml(part);
@@ -522,7 +561,7 @@ function splitReadableChunks(text = "") {
 }
 
 function normalizeNoteText(body) {
-  const headingWords = "今天做了什么|具体做了这些事|遇到的问题|结果证据|结果|下一步|面试可讲|技术笔记|学习心得|复盘|判断标准";
+  const headingWords = "今天做了什么|具体做了这些事|遇到的问题|解决过程|结果证据|结果|下一步|面试可讲|技术笔记|学习心得|复盘|判断标准";
   return String(body)
     .replace(/\r\n/g, "\n")
     .replace(new RegExp(`\\s*(${headingWords})([：:]|\\s+)`, "g"), "\n$1：")
@@ -536,11 +575,12 @@ function formatNoteBody(rawBody = "") {
   if (!body) return `<p class="note-paragraph muted">没有填写详细内容。</p>`;
 
   const normalized = normalizeNoteText(body);
-  const headingPattern = /^(今天做了什么|具体做了这些事|遇到的问题|结果证据|结果|下一步|面试可讲|技术笔记|学习心得|复盘|判断标准)[：:]\s*(.*)$/;
+  const headingPattern = /^(今天做了什么|具体做了这些事|遇到的问题|解决过程|结果证据|结果|下一步|面试可讲|技术笔记|学习心得|复盘|判断标准)[：:]\s*(.*)$/;
   const headingClassMap = {
     "今天做了什么": "done",
     "具体做了这些事": "done",
     "遇到的问题": "problem",
+    "解决过程": "review",
     "结果证据": "proof",
     "结果": "proof",
     "下一步": "next",
@@ -703,28 +743,30 @@ function setupQuickNotes() {
       createdAt: now.toISOString()
     };
     notes.unshift(note);
-    saveJson(storageKeys.notes, notes);
+    const draftSaved = saveJson(storageKeys.notes, notes);
     form.reset();
-    render();
+    if (draftSaved) render();
 
     try {
       const result = await saveNoteToArchive(note);
       if (result.status === "written") {
-        const savedNotes = loadJson(storageKeys.notes, []);
-        const nextNotes = savedNotes.map((item) => item.id === note.id
-          ? { ...item, archiveFileName: result.fileName, archivedAt: new Date().toISOString() }
-          : item);
-        saveJson(storageKeys.notes, nextNotes);
-        render();
+        if (draftSaved) {
+          const savedNotes = loadJson(storageKeys.notes, []);
+          const nextNotes = savedNotes.map((item) => item.id === note.id
+            ? { ...item, archiveFileName: result.fileName, archivedAt: new Date().toISOString() }
+            : item);
+          saveJson(storageKeys.notes, nextNotes);
+          render();
+        }
         setArchiveStatus(`已写入 data/daily-notes/${getLocalDateKey(now)}.md`);
-        toast("已保存草稿，并写入今日归档文件");
+        toast(draftSaved ? "已保存草稿，并写入今日归档文件" : "草稿空间不足，但已写入归档文件");
       } else {
         setArchiveStatus("已下载 Markdown，请放入 data/daily-notes 后等待自动归档。");
-        toast("已保存草稿，并下载归档 Markdown");
+        toast(draftSaved ? "已保存草稿，并下载归档 Markdown" : "草稿空间不足，已下载归档 Markdown");
       }
     } catch (error) {
       setArchiveStatus(error.message || "未写入归档文件，只保存了浏览器草稿。");
-      toast("已保存草稿，但未写入归档文件");
+      toast(draftSaved ? "已保存草稿，但未写入归档文件" : "保存失败：草稿和归档都未写入");
     }
   });
 
@@ -748,7 +790,11 @@ function setupQuickNotes() {
 
     try {
       const result = await removeNoteFromArchive(note);
-      saveJson(storageKeys.notes, notes.filter((item) => item.id !== button.dataset.noteId));
+      if (!saveJson(storageKeys.notes, notes.filter((item) => item.id !== button.dataset.noteId))) {
+        setArchiveStatus("浏览器本地空间不足，删除状态没有保存。");
+        toast("删除状态没有保存");
+        return;
+      }
       render();
       if (result === "removed") {
         setArchiveStatus(`已从 ${note.archiveFileName || `${getLocalDateKey(getNoteDate(note))}.md`} 移除这条速记。`);
@@ -860,7 +906,10 @@ function setupGallery() {
       caption: caption.value.trim(),
       date: new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date())
     });
-    saveJson(storageKeys.images, images.slice(0, 18));
+    if (!saveJson(storageKeys.images, images.slice(0, 18))) {
+      toast("浏览器本地空间不足，图片没有保存");
+      return;
+    }
     form.reset();
     selectedFile = null;
     render();
@@ -871,7 +920,10 @@ function setupGallery() {
     const button = event.target.closest("button[data-image-id]");
     if (!button) return;
     const images = loadJson(storageKeys.images, []).filter((image) => image.id !== button.dataset.imageId);
-    saveJson(storageKeys.images, images);
+    if (!saveJson(storageKeys.images, images)) {
+      toast("浏览器本地空间不足，删除状态没有保存");
+      return;
+    }
     render();
     toast("已删除图片");
   });
@@ -919,7 +971,10 @@ function setupInterviewQuestions() {
       tags: rawTags.split(/[，,\s]+/).map((tag) => tag.trim()).filter(Boolean),
       date: new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date())
     });
-    saveJson(storageKeys.questions, questions);
+    if (!saveJson(storageKeys.questions, questions)) {
+      toast("浏览器本地空间不足，面试问题没有保存");
+      return;
+    }
     form.reset();
     render();
     toast("面试问题已记录");
@@ -929,7 +984,10 @@ function setupInterviewQuestions() {
     const button = event.target.closest("button[data-question-id]");
     if (!button) return;
     const questions = loadJson(storageKeys.questions, []).filter((item) => item.id !== button.dataset.questionId);
-    saveJson(storageKeys.questions, questions);
+    if (!saveJson(storageKeys.questions, questions)) {
+      toast("浏览器本地空间不足，删除状态没有保存");
+      return;
+    }
     render();
     toast("已删除这个面试问题");
   });
