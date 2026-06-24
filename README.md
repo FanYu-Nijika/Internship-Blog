@@ -63,6 +63,8 @@ data/daily-notes/2026-06-20.md
 
 然后按模板填写：今天做了什么、遇到的问题、解决过程、结果证据、面试可讲、下一步。
 
+注意：网页里的“今日速记”是纯静态浏览器草稿，只保存在当前浏览器的 `localStorage`。Windows 任务计划不能读取浏览器草稿；只有放在 `data/daily-notes/yyyy-MM-dd.md` 里的 Markdown 才会被凌晨任务归档、提交并上传 GitHub。
+
 ### 手动归档某一天
 
 在项目根目录打开 PowerShell，运行：
@@ -87,7 +89,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\install-nightly-archive-task.ps
 InternshipBlogDailyArchive
 ```
 
-默认每天凌晨 4 点归档“前一天”的 Markdown 速记，然后自动执行 `git add -A`、提交和 `git push origin main`。例如 6 月 21 日凌晨 4 点，会尝试归档：
+默认每天凌晨 4 点归档“前一天”的 Markdown 速记，然后自动执行 `git add -A`、提交和 `git push origin main`。如果电脑在凌晨 4 点没有开机，Windows 会在下次可运行时补跑任务；如果对应日期的 Markdown 文件不存在，任务会写日志并跳过提交。比如 6 月 21 日凌晨 4 点，会尝试归档：
 
 ```text
 data/daily-notes/2026-06-20.md
