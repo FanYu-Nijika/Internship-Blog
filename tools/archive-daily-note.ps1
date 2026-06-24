@@ -48,6 +48,7 @@ function Get-SectionItems([string]$Text, [string]$Heading) {
     $value = $line.Trim()
     if (-not $value) { continue }
     $value = [regex]::Replace($value, "^\s*(?:[-*+]\s+|\d{1,2}[、，,.．)）]\s*)", "")
+    if (-not $value -or $value -eq "-") { continue }
     if ($value) { $items.Add($value) }
   }
   return @($items)
@@ -109,28 +110,50 @@ if ($sections.Count -eq 0) {
 }
 
 $numericId = [int]($NoteDate -replace "-", "")
+$summary = Build-Summary $noteText $doneItems
 $entry = [ordered]@{
   id = $numericId
   date = $NoteDate
   type = $type
   title = $title
-  summary = Build-Summary $noteText $doneItems
+  summary = $summary
   tags = $tags
   project = $project
   result = $result
   source = "local-daily-note"
-  sections = @($sections)
+  sections = @($sections.ToArray())
 }
 
 $entryJson = $entry | ConvertTo-Json -Depth 20
 $block = "  // LOCAL-DAILY-NOTE:$NoteDate START`r`n  $($entryJson -replace "`r?`n", "`r`n  "),`r`n  // LOCAL-DAILY-NOTE:$NoteDate END`r`n"
 
+$milestoneDate = $NoteDate
+try {
+  $milestoneDate = ([DateTime]::ParseExact($NoteDate, "yyyy-MM-dd", $null)).ToString("MM/dd")
+} catch {
+  $milestoneDate = $NoteDate
+}
+$milestone = [ordered]@{
+  id = "daily-$NoteDate"
+  date = $milestoneDate
+  title = $title
+  detail = $summary
+}
+$milestoneJson = $milestone | ConvertTo-Json -Depth 10
+$milestoneBlock = "  // LOCAL-DAILY-MILESTONE:$NoteDate START`r`n  $($milestoneJson -replace "`r?`n", "`r`n  "),`r`n  // LOCAL-DAILY-MILESTONE:$NoteDate END`r`n"
+
 $entriesText = Read-TextUtf8 $entriesPath
 $existingPattern = "(?ms)\s*// LOCAL-DAILY-NOTE:$([regex]::Escape($NoteDate)) START.*?// LOCAL-DAILY-NOTE:$([regex]::Escape($NoteDate)) END\r?\n?"
 $entriesText = [regex]::Replace($entriesText, $existingPattern, "")
+$existingMilestonePattern = "(?ms)\s*// LOCAL-DAILY-MILESTONE:$([regex]::Escape($NoteDate)) START.*?// LOCAL-DAILY-MILESTONE:$([regex]::Escape($NoteDate)) END\r?\n?"
+$entriesText = [regex]::Replace($entriesText, $existingMilestonePattern, "")
 
 if ($entriesText -notmatch "window\.INTERNSHIP_ENTRIES\s*=\s*\[") {
   throw "data\entries.js 中没有找到 window.INTERNSHIP_ENTRIES = ["
+}
+
+if ($entriesText -notmatch "window\.INTERNSHIP_MILESTONES\s*=\s*\[") {
+  throw "data\entries.js 中没有找到 window.INTERNSHIP_MILESTONES = ["
 }
 
 if (-not (Test-Path $backupDir)) {
@@ -140,7 +163,9 @@ $backupPath = Join-Path $backupDir ("entries-$((Get-Date).ToString('yyyyMMdd-HHm
 Write-TextUtf8NoBom $backupPath $entriesText
 
 $entriesText = [regex]::Replace($entriesText, "window\.INTERNSHIP_ENTRIES\s*=\s*\[\s*", { param($m) $m.Value + "`r`n" + $block }, 1)
+$entriesText = [regex]::Replace($entriesText, "window\.INTERNSHIP_MILESTONES\s*=\s*\[\s*", { param($m) $m.Value + "`r`n" + $milestoneBlock }, 1)
 Write-TextUtf8NoBom $entriesPath $entriesText
 
 Write-Host "已归档 $NoteDate 到 data\entries.js"
+Write-Host "已同步 $NoteDate 到成长时间线"
 Write-Host "备份文件：$backupPath"

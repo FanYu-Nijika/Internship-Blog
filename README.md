@@ -27,7 +27,7 @@ http://localhost:5173
 - 技术关键词云
 - 实习成长时间线：支持在页面上新增、编辑、删除、恢复默认模板
 - 图片证据墙：支持点击/拖拽上传，自动压缩后保存到浏览器本地
-- 今日速记：保存到浏览器本地，并自动优化排版
+- 今日速记：保存到浏览器本地，并可通过 File System Access API 同步写入 `data/daily-notes/yyyy-MM-dd.md`
 - 更稳的速记编号识别：不会把 `127.0.0.1`、版本号、路径误判成编号
 - 面试素材库：STAR 事例、项目表达模板、高频追问清单
 - 面试问题记录：支持新增问题、回答思路、关联证据和关键词
@@ -49,21 +49,27 @@ Internship Blog/
 
 ### 每天怎么写
 
-复制：
+推荐直接在网页“今日速记”里写。第一次使用时，点击“选择归档目录”，选择：
 
 ```text
-data/daily-notes/TEMPLATE.md
+data/daily-notes
 ```
 
-改名为当天日期，例如：
+之后每次点击“保存到本地速记”，网页会同时保存浏览器草稿，并把内容追加写入当天文件，例如：
 
 ```text
 data/daily-notes/2026-06-20.md
 ```
 
-然后按模板填写：今天做了什么、遇到的问题、解决过程、结果证据、面试可讲、下一步。
+如果浏览器不支持直接写文件，网页会下载当天 Markdown 文件；把它放进 `data/daily-notes/` 后，凌晨任务仍然可以自动归档上传。
 
-注意：网页里的“今日速记”是纯静态浏览器草稿，只保存在当前浏览器的 `localStorage`。Windows 任务计划不能读取浏览器草稿；只有放在 `data/daily-notes/yyyy-MM-dd.md` 里的 Markdown 才会被凌晨任务归档、提交并上传 GitHub。
+也可以手动复制模板：
+
+```text
+data/daily-notes/TEMPLATE.md
+```
+
+改名成当天日期后填写。Windows 任务计划不会读取浏览器草稿；它只读取已经落盘的 `data/daily-notes/yyyy-MM-dd.md`。
 
 ### 手动归档某一天
 
@@ -73,7 +79,7 @@ data/daily-notes/2026-06-20.md
 powershell -ExecutionPolicy Bypass -File .\tools\archive-daily-note.ps1 -NoteDate 2026-06-19
 ```
 
-它会把 `data/daily-notes/2026-06-19.md` 自动写入 `data/entries.js`，并在 `data/backups/` 里备份旧版 `entries.js`。
+它会把 `data/daily-notes/2026-06-19.md` 自动写入 `data/entries.js` 的实习记录和成长时间线，并在 `data/backups/` 里备份旧版 `entries.js`。
 
 ### 安装每天凌晨 4 点自动归档并上传 GitHub
 
@@ -143,11 +149,11 @@ Unregister-ScheduledTask -TaskName InternshipBlogDailyArchive -Confirm:$false
 
 ### 1. 正式记录：保存到项目文件
 
-`data/entries.js` 里的内容属于正式记录，会跟着项目文件一起保存、备份和上传 GitHub。今天的记录已经整理进 `data/entries.js`，并加入了“查看详细复盘”的展开内容。
+`data/entries.js` 里的内容属于正式记录，会跟着项目文件一起保存、备份和上传 GitHub。凌晨任务会从 `data/daily-notes/yyyy-MM-dd.md` 生成正式记录和成长时间线节点。
 
 适合放：日报、项目复盘、技术笔记、面试可讲故事、重要结果证据。
 
-### 2. 页面临时记录：保存到浏览器本地
+### 2. 页面草稿：保存到浏览器本地，也可同步写入 Markdown
 
 下面这些内容会保存在浏览器本地 `localStorage` 里：
 
@@ -156,7 +162,7 @@ Unregister-ScheduledTask -TaskName InternshipBlogDailyArchive -Confirm:$false
 - 实习成长时间线的页面编辑结果
 - 面试问题记录
 
-这些内容刷新页面不会丢，但它们只存在当前浏览器里。换浏览器、清理浏览器缓存或换电脑后，这些本地内容可能看不到。重要内容建议定期整理进 `data/entries.js` 或复制到文档里。
+这些内容刷新页面不会丢，但它们只存在当前浏览器里。今日速记在选择 `data/daily-notes` 目录后，会额外写入 Markdown 文件；只有写入 Markdown 的内容，凌晨任务才能自动归档并上传 GitHub。
 
 ## 目录结构
 

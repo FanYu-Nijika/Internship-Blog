@@ -421,6 +421,17 @@ h1, h2 { font-family: "Noto Serif SC", Inter, serif; }
   background: rgba(255,250,242,.82);
 }
 .image-uploader button, .note-form button { margin-top: 1rem; width: 100%; }
+.archive-actions {
+  margin-top: .8rem;
+  display: grid;
+  gap: .55rem;
+}
+.archive-actions button { margin-top: 0; }
+.archive-actions small {
+  color: var(--muted);
+  line-height: 1.6;
+  font-weight: 800;
+}
 .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .image-card {
   overflow: hidden;

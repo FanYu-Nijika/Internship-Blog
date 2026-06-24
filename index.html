@@ -186,7 +186,7 @@
       <div class="section-heading reveal">
         <span class="section-kicker">Quick Note</span>
         <h2>今日速记</h2>
-        <p>这里只显示今天的浏览器草稿，长内容会先压缩展示；凌晨自动归档只读取 <code>data/daily-notes/yyyy-MM-dd.md</code>。</p>
+        <p>保存时会先写浏览器草稿；选择归档目录后，会同步写入 <code>data/daily-notes/yyyy-MM-dd.md</code> 等待凌晨自动归档。</p>
       </div>
       <div class="note-app glass reveal">
         <form id="quickNoteForm" class="note-form">
@@ -194,6 +194,10 @@
           <label>类型<select name="type"><option>实习日报</option><option>学习心得</option><option>技术笔记</option><option>项目复盘</option><option>面试素材</option></select></label>
           <label>内容<textarea name="body" rows="5" placeholder="今天做了什么？卡在哪里？我如何排查？结果怎么证明？"></textarea></label>
           <button class="btn primary" type="submit">保存到本地速记</button>
+          <div class="archive-actions">
+            <button class="btn ghost" id="archiveDirButton" type="button">选择归档目录</button>
+            <small id="archiveStatus">首次使用请选择 data/daily-notes 目录。</small>
+          </div>
         </form>
         <div class="local-notes" id="localNotes"></div>
       </div>

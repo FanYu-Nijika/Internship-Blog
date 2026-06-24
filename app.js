@@ -8,6 +8,12 @@ const storageKeys = {
   questions: "internship-blog-interview-questions"
 };
 
+const archiveDb = {
+  name: "internship-blog-archive",
+  store: "handles",
+  dirKey: "daily-notes-dir"
+};
+
 const $ = (selector, parent = document) => parent.querySelector(selector);
 const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
 
@@ -107,16 +113,30 @@ function renderTechCloud() {
 
 function getDefaultTimelineItems() {
   return milestones.map((item, index) => ({
-    id: `default-${index + 1}`,
+    id: item.id || `default-${item.date || index + 1}-${item.title || index + 1}`,
     date: item.date,
     title: item.title,
     detail: item.detail
   }));
 }
 
+function getSavedTimelineItems() {
+  const saved = loadJson(storageKeys.timeline, []);
+  return Array.isArray(saved) ? saved : [];
+}
+
 function getTimelineItems() {
-  const saved = loadJson(storageKeys.timeline, null);
-  return Array.isArray(saved) && saved.length ? saved : getDefaultTimelineItems();
+  const defaults = getDefaultTimelineItems();
+  const saved = getSavedTimelineItems();
+  if (!saved.length) return defaults;
+
+  const savedById = new Map(saved.map((item) => [item.id, item]));
+  const defaultIds = new Set(defaults.map((item) => item.id));
+  const mergedDefaults = defaults
+    .map((item) => savedById.get(item.id) || item)
+    .filter((item) => !item.deleted);
+  const customItems = saved.filter((item) => !defaultIds.has(item.id) && !item.deleted);
+  return [...mergedDefaults, ...customItems];
 }
 
 function renderTimeline() {
@@ -176,10 +196,10 @@ function setupTimelineEditor() {
       toast("时间、标题、细节都要填一下");
       return;
     }
-    const items = getTimelineItems();
-    const existed = items.some((item) => item.id === id);
+    const items = getSavedTimelineItems();
+    const existed = items.some((item) => item.id === nextItem.id);
     const nextItems = existed
-      ? items.map((item) => item.id === id ? nextItem : item)
+      ? items.map((item) => item.id === nextItem.id ? nextItem : item)
       : [...items, nextItem];
     saveJson(storageKeys.timeline, nextItems);
     renderTimeline();
@@ -192,12 +212,17 @@ function setupTimelineEditor() {
     if (!button) return;
     const id = button.dataset.timelineId;
     const action = button.dataset.timelineAction;
-    const items = getTimelineItems();
-    const item = items.find((current) => current.id === id);
+    const visibleItems = getTimelineItems();
+    const item = visibleItems.find((current) => current.id === id);
     if (!item) return;
 
     if (action === "delete") {
-      saveJson(storageKeys.timeline, items.filter((current) => current.id !== id));
+      const savedItems = getSavedTimelineItems();
+      const defaultIds = new Set(getDefaultTimelineItems().map((current) => current.id));
+      const nextItems = defaultIds.has(id)
+        ? [...savedItems.filter((current) => current.id !== id), { ...item, deleted: true }]
+        : savedItems.filter((current) => current.id !== id);
+      saveJson(storageKeys.timeline, nextItems);
       renderTimeline();
       toast("已删除这个时间线节点");
       return;
@@ -244,6 +269,176 @@ function loadJson(key, fallback) {
 
 function saveJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function openArchiveDb() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error("当前浏览器不支持 IndexedDB"));
+      return;
+    }
+    const request = indexedDB.open(archiveDb.name, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(archiveDb.store);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("IndexedDB 打开失败"));
+  });
+}
+
+async function getArchiveDirHandle() {
+  const db = await openArchiveDb();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(archiveDb.store, "readonly").objectStore(archiveDb.store).get(archiveDb.dirKey);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error || new Error("读取归档目录失败"));
+  });
+}
+
+async function saveArchiveDirHandle(handle) {
+  const db = await openArchiveDb();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(archiveDb.store, "readwrite").objectStore(archiveDb.store).put(handle, archiveDb.dirKey);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error || new Error("保存归档目录失败"));
+  });
+}
+
+async function ensureArchivePermission(handle) {
+  if (!handle) return false;
+  const options = { mode: "readwrite" };
+  if ((await handle.queryPermission(options)) === "granted") return true;
+  return (await handle.requestPermission(options)) === "granted";
+}
+
+async function chooseArchiveDir() {
+  if (!window.showDirectoryPicker) {
+    throw new Error("当前浏览器不支持直接写入本地文件");
+  }
+  const handle = await window.showDirectoryPicker({ mode: "readwrite" });
+  if (!(await ensureArchivePermission(handle))) {
+    throw new Error("没有获得归档目录写入权限");
+  }
+  await saveArchiveDirHandle(handle);
+  return handle;
+}
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getLocalTimeText(date = new Date()) {
+  return new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+function getNoteDate(note) {
+  const date = note.createdAt ? new Date(note.createdAt) : new Date();
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
+function getArchiveSummary(note) {
+  const body = String(note.body || "").replace(/\s+/g, " ").trim();
+  return body ? body.slice(0, 90) : `记录 ${note.title || "今日速记"} 的学习和实习过程。`;
+}
+
+function getMarkdownLinesForNote(note) {
+  const date = getNoteDate(note);
+  const time = getLocalTimeText(date);
+  const title = String(note.title || "未命名速记").trim();
+  const type = String(note.type || "速记").trim();
+  const bodyLines = String(note.body || "")
+    .replace(/\r\n/g, "\n")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const lines = [`- ${time}｜${title}（${type}）`];
+  bodyLines.forEach((line) => lines.push(`- ${line}`));
+  return lines;
+}
+
+function buildDailyNoteMarkdown(note) {
+  const date = getNoteDate(note);
+  const dateKey = getLocalDateKey(date);
+  const title = String(note.title || `${dateKey} 今日速记`).trim();
+  const type = String(note.type || "实习日报").trim();
+  const summary = getArchiveSummary(note);
+  const lines = getMarkdownLinesForNote(note).join("\n");
+  return `# ${title}
+
+- 类型：${type}
+- 项目：实习记录
+- 标签：${type}，浏览器速记，实习记录
+- 结果：已保存为本地 Markdown 归档，等待自动整理上传
+- 摘要：${summary}
+
+## 今天做了什么
+
+${lines}
+
+## 遇到的问题
+
+-
+
+## 解决过程
+
+-
+
+## 结果证据
+
+- 今日速记已写入 data/daily-notes/${dateKey}.md
+
+## 面试可讲
+
+-
+
+## 下一步
+
+-
+`;
+}
+
+function appendLinesToMarkdownSection(text, heading, lines) {
+  const normalized = String(text || "").replace(/\r\n/g, "\n").trimEnd();
+  if (!normalized) return `${lines.join("\n")}\n`;
+
+  const rows = normalized.split("\n");
+  const headingIndex = rows.findIndex((line) => line.trim() === `## ${heading}`);
+  if (headingIndex === -1) {
+    return `${normalized}\n\n## ${heading}\n\n${lines.join("\n")}\n`;
+  }
+
+  let insertIndex = rows.length;
+  for (let index = headingIndex + 1; index < rows.length; index += 1) {
+    if (/^##\s+/.test(rows[index].trim())) {
+      insertIndex = index;
+      break;
+    }
+  }
+
+  const before = rows.slice(0, insertIndex);
+  const after = rows.slice(insertIndex);
+  while (before.length && before[before.length - 1].trim() === "") before.pop();
+  const nextRows = [...before, "", ...lines, ""];
+  if (after.length) nextRows.push(...after);
+  return `${nextRows.join("\n").trimEnd()}\n`;
+}
+
+function mergeNoteIntoDailyMarkdown(oldText, note) {
+  if (!String(oldText || "").trim()) return buildDailyNoteMarkdown(note);
+  return appendLinesToMarkdownSection(oldText, "今天做了什么", getMarkdownLinesForNote(note));
+}
+
+function downloadMarkdownFallback(fileName, content) {
+  const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function escapeHtml(value = "") {
@@ -343,7 +538,59 @@ function formatNoteBody(rawBody = "") {
 function setupQuickNotes() {
   const form = $("#quickNoteForm");
   const list = $("#localNotes");
+  const archiveButton = $("#archiveDirButton");
+  const archiveStatus = $("#archiveStatus");
   if (!form || !list) return;
+
+  const setArchiveStatus = (message) => {
+    if (archiveStatus) archiveStatus.textContent = message;
+  };
+
+  const refreshArchiveStatus = async () => {
+    if (!window.showDirectoryPicker) {
+      setArchiveStatus("当前浏览器不支持直接写入归档文件，保存时会下载 Markdown。");
+      return;
+    }
+    try {
+      const handle = await getArchiveDirHandle();
+      if (handle && await ensureArchivePermission(handle)) {
+        setArchiveStatus("已连接 data/daily-notes，保存速记会同步写入 Markdown。");
+      } else {
+        setArchiveStatus("首次使用请先选择 data/daily-notes 归档目录。");
+      }
+    } catch {
+      setArchiveStatus("首次使用请先选择 data/daily-notes 归档目录。");
+    }
+  };
+
+  const saveNoteToArchive = async (note) => {
+    const date = getNoteDate(note);
+    const dateKey = getLocalDateKey(date);
+    const fileName = `${dateKey}.md`;
+
+    if (!window.showDirectoryPicker) {
+      downloadMarkdownFallback(fileName, buildDailyNoteMarkdown(note));
+      return "downloaded";
+    }
+
+    let handle = await getArchiveDirHandle();
+    if (!handle || !(await ensureArchivePermission(handle))) {
+      handle = await chooseArchiveDir();
+    }
+
+    const fileHandle = await handle.getFileHandle(fileName, { create: true });
+    let oldText = "";
+    try {
+      oldText = await (await fileHandle.getFile()).text();
+    } catch {
+      oldText = "";
+    }
+
+    const writable = await fileHandle.createWritable();
+    await writable.write(mergeNoteIntoDailyMarkdown(oldText, note));
+    await writable.close();
+    return "written";
+  };
 
   const todayPrefix = () => new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" }).format(new Date());
   const isTodayNote = (note) => {
@@ -380,23 +627,48 @@ function setupQuickNotes() {
     `).join("");
   };
 
-  form.addEventListener("submit", (event) => {
+  archiveButton?.addEventListener("click", async () => {
+    try {
+      await chooseArchiveDir();
+      setArchiveStatus("已连接 data/daily-notes，保存速记会同步写入 Markdown。");
+      toast("归档目录已连接");
+    } catch (error) {
+      setArchiveStatus(error.message || "归档目录连接失败");
+      toast("归档目录连接失败");
+    }
+  });
+
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const formData = new FormData(form);
     const notes = loadJson(storageKeys.notes, []);
     const now = new Date();
-    notes.unshift({
+    const note = {
       id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
       title: formData.get("title"),
       type: formData.get("type"),
       body: formData.get("body"),
       date: new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(now),
       createdAt: now.toISOString()
-    });
+    };
+    notes.unshift(note);
     saveJson(storageKeys.notes, notes);
     form.reset();
     render();
-    toast("已保存到本地速记");
+
+    try {
+      const result = await saveNoteToArchive(note);
+      if (result === "written") {
+        setArchiveStatus(`已写入 data/daily-notes/${getLocalDateKey(now)}.md`);
+        toast("已保存草稿，并写入今日归档文件");
+      } else {
+        setArchiveStatus("已下载 Markdown，请放入 data/daily-notes 后等待自动归档。");
+        toast("已保存草稿，并下载归档 Markdown");
+      }
+    } catch (error) {
+      setArchiveStatus(error.message || "未写入归档文件，只保存了浏览器草稿。");
+      toast("已保存草稿，但未写入归档文件");
+    }
   });
 
   list.addEventListener("click", (event) => {
@@ -420,6 +692,7 @@ function setupQuickNotes() {
   });
 
   render();
+  refreshArchiveStatus();
 }
 
 function setupGallery() {
