@@ -357,13 +357,20 @@ function getMarkdownLinesForNote(note) {
   return lines;
 }
 
+function getMarkdownBlockForNote(note) {
+  const noteId = String(note.id || "");
+  const lines = getMarkdownLinesForNote(note).join("\n");
+  if (!noteId) return lines;
+  return `<!-- QUICK-NOTE:${noteId} START -->\n${lines}\n<!-- QUICK-NOTE:${noteId} END -->`;
+}
+
 function buildDailyNoteMarkdown(note) {
   const date = getNoteDate(note);
   const dateKey = getLocalDateKey(date);
   const title = String(note.title || `${dateKey} 今日速记`).trim();
   const type = String(note.type || "实习日报").trim();
   const summary = getArchiveSummary(note);
-  const lines = getMarkdownLinesForNote(note).join("\n");
+  const noteBlock = getMarkdownBlockForNote(note);
   return `# ${title}
 
 - 类型：${type}
@@ -374,7 +381,7 @@ function buildDailyNoteMarkdown(note) {
 
 ## 今天做了什么
 
-${lines}
+${noteBlock}
 
 ## 遇到的问题
 
@@ -426,7 +433,25 @@ function appendLinesToMarkdownSection(text, heading, lines) {
 
 function mergeNoteIntoDailyMarkdown(oldText, note) {
   if (!String(oldText || "").trim()) return buildDailyNoteMarkdown(note);
-  return appendLinesToMarkdownSection(oldText, "今天做了什么", getMarkdownLinesForNote(note));
+  return appendLinesToMarkdownSection(oldText, "今天做了什么", [getMarkdownBlockForNote(note)]);
+}
+
+function removeNoteFromDailyMarkdown(oldText, note) {
+  const text = String(oldText || "").replace(/\r\n/g, "\n");
+  const noteId = String(note.id || "");
+  if (noteId) {
+    const markerPattern = new RegExp(`\\n?<!-- QUICK-NOTE:${noteId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} START -->[\\s\\S]*?<!-- QUICK-NOTE:${noteId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} END -->\\n?`, "g");
+    const withoutMarkedBlock = text.replace(markerPattern, "\n");
+    if (withoutMarkedBlock !== text) {
+      return withoutMarkedBlock.replace(/\n{3,}/g, "\n\n").trimEnd() + "\n";
+    }
+  }
+
+  const lines = getMarkdownLinesForNote(note).join("\n");
+  const index = text.indexOf(lines);
+  if (index === -1) return text;
+  const nextText = `${text.slice(0, index)}${text.slice(index + lines.length)}`;
+  return nextText.replace(/\n{3,}/g, "\n\n").trimEnd() + "\n";
 }
 
 function downloadMarkdownFallback(fileName, content) {
@@ -589,7 +614,25 @@ function setupQuickNotes() {
     const writable = await fileHandle.createWritable();
     await writable.write(mergeNoteIntoDailyMarkdown(oldText, note));
     await writable.close();
-    return "written";
+    return { status: "written", fileName, dateKey };
+  };
+
+  const removeNoteFromArchive = async (note) => {
+    if (!window.showDirectoryPicker) return "unsupported";
+    const handle = await getArchiveDirHandle();
+    if (!handle || !(await ensureArchivePermission(handle))) return "no-permission";
+
+    const date = getNoteDate(note);
+    const fileName = note.archiveFileName || `${getLocalDateKey(date)}.md`;
+    const fileHandle = await handle.getFileHandle(fileName, { create: false });
+    const oldText = await (await fileHandle.getFile()).text();
+    const nextText = removeNoteFromDailyMarkdown(oldText, note);
+    if (nextText === oldText) return "not-found";
+
+    const writable = await fileHandle.createWritable();
+    await writable.write(nextText);
+    await writable.close();
+    return "removed";
   };
 
   const todayPrefix = () => new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" }).format(new Date());
@@ -658,7 +701,13 @@ function setupQuickNotes() {
 
     try {
       const result = await saveNoteToArchive(note);
-      if (result === "written") {
+      if (result.status === "written") {
+        const savedNotes = loadJson(storageKeys.notes, []);
+        const nextNotes = savedNotes.map((item) => item.id === note.id
+          ? { ...item, archiveFileName: result.fileName, archivedAt: new Date().toISOString() }
+          : item);
+        saveJson(storageKeys.notes, nextNotes);
+        render();
         setArchiveStatus(`已写入 data/daily-notes/${getLocalDateKey(now)}.md`);
         toast("已保存草稿，并写入今日归档文件");
       } else {
@@ -671,7 +720,7 @@ function setupQuickNotes() {
     }
   });
 
-  list.addEventListener("click", (event) => {
+  list.addEventListener("click", async (event) => {
     const toggle = event.target.closest("button[data-note-toggle]");
     if (toggle) {
       const body = $(`#note-body-${CSS.escape(toggle.dataset.noteToggle)}`);
@@ -685,10 +734,28 @@ function setupQuickNotes() {
 
     const button = event.target.closest("button[data-note-id]");
     if (!button) return;
-    const notes = loadJson(storageKeys.notes, []).filter((note) => note.id !== button.dataset.noteId);
-    saveJson(storageKeys.notes, notes);
-    render();
-    toast("已删除这条速记");
+    const notes = loadJson(storageKeys.notes, []);
+    const note = notes.find((item) => item.id === button.dataset.noteId);
+    if (!note) return;
+
+    try {
+      const result = await removeNoteFromArchive(note);
+      saveJson(storageKeys.notes, notes.filter((item) => item.id !== button.dataset.noteId));
+      render();
+      if (result === "removed") {
+        setArchiveStatus(`已从 ${note.archiveFileName || `${getLocalDateKey(getNoteDate(note))}.md`} 移除这条速记。`);
+        toast("已删除速记和归档内容");
+      } else if (result === "not-found") {
+        setArchiveStatus("已删除浏览器草稿，但归档文件里没有找到对应内容。");
+        toast("已删除草稿，归档内容未找到");
+      } else {
+        setArchiveStatus("已删除浏览器草稿；未连接归档目录，Markdown 未同步删除。");
+        toast("已删除草稿，未同步归档文件");
+      }
+    } catch (error) {
+      setArchiveStatus(error.message || "删除归档内容失败，浏览器草稿未删除。");
+      toast("删除失败，未改动这条速记");
+    }
   });
 
   render();

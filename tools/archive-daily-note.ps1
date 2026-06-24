@@ -47,6 +47,7 @@ function Get-SectionItems([string]$Text, [string]$Heading) {
   foreach ($line in ($body -split "\r?\n")) {
     $value = $line.Trim()
     if (-not $value) { continue }
+    if ($value -match "^<!--\s*QUICK-NOTE:.*-->$") { continue }
     $value = [regex]::Replace($value, "^\s*(?:[-*+]\s+|\d{1,2}[、，,.．)）]\s*)", "")
     if (-not $value -or $value -eq "-") { continue }
     if ($value) { $items.Add($value) }
