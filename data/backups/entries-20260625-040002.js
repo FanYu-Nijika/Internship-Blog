@@ -1,38 +1,5 @@
 window.INTERNSHIP_ENTRIES = [
-  
-  // LOCAL-DAILY-NOTE:2026-06-24 START
   {
-      "id":  20260624,
-      "date":  "2026-06-24",
-      "type":  "学习心得",
-      "title":  "codex接入solidworks",
-      "summary":  "消耗了将近80的5小时额度，搭建好了solidworks-pro这个插件，但是我觉得效果依旧差强人意，还是学一下手动建模吧，先去拿bcr_arm练手",
-      "tags":  [
-                   "学习心得",
-                   "浏览器速记",
-                   "实习记录"
-               ],
-      "project":  "实习记录",
-      "result":  "已保存为本地 Markdown 归档，等待自动整理上传",
-      "source":  "local-daily-note",
-      "sections":  [
-                       {
-                           "heading":  "今天做了什么",
-                           "items":  [
-                                         "18:56｜codex接入solidworks（学习心得）",
-                                         "消耗了将近80的5小时额度，搭建好了solidworks-pro这个插件，但是我觉得效果依旧差强人意，还是学一下手动建模吧，先去拿bcr_arm练手"
-                                     ]
-                       },
-                       {
-                           "heading":  "结果证据",
-                           "items":  [
-                                         "今日速记已写入 data/daily-notes/2026-06-24.md"
-                                     ]
-                       }
-                   ]
-  },
-  // LOCAL-DAILY-NOTE:2026-06-24 END
-{
     id: 1,
     date: "2026-06-19",
     type: "实习日报",
@@ -91,16 +58,7 @@ window.INTERNSHIP_ENTRIES = [
 ];
 
 window.INTERNSHIP_MILESTONES = [
-  
-  // LOCAL-DAILY-MILESTONE:2026-06-24 START
-  {
-      "id":  "daily-2026-06-24",
-      "date":  "06/24",
-      "title":  "codex接入solidworks",
-      "detail":  "消耗了将近80的5小时额度，搭建好了solidworks-pro这个插件，但是我觉得效果依旧差强人意，还是学一下手动建模吧，先去拿bcr_arm练手"
-  },
-  // LOCAL-DAILY-MILESTONE:2026-06-24 END
-{ date: "06/19 上午", title: "打通 DevSpace 本地连接", detail: "完成 ChatGPT 自定义 MCP、Cloudflare Tunnel、公网 /mcp、本地 DevSpace、allowedRoots 的联调。" },
+  { date: "06/19 上午", title: "打通 DevSpace 本地连接", detail: "完成 ChatGPT 自定义 MCP、Cloudflare Tunnel、公网 /mcp、本地 DevSpace、allowedRoots 的联调。" },
   { date: "06/19 下午", title: "搭建实习记录博客", detail: "生成暖色系前端页面，加入动画、插图、记录卡片、技术沉淀、图片证据墙、今日速记和面试素材库。" },
   { date: "06/19 晚上", title: "优化复盘体验", detail: "修复速记排版和编号识别问题，新增面试问题记录、可编辑成长时间线，并删除视频回顾模块。" },
   { date: "下一步", title: "整理证据并准备上传", detail: "补充关键截图，等 GitHub 工具或 GitHub CLI 可用后再推送到远程仓库。" }

@@ -73,16 +73,6 @@ data/daily-notes/TEMPLATE.md
 
 改名成当天日期后填写。Windows 任务计划不会读取浏览器草稿；它只读取已经落盘的 `data/daily-notes/yyyy-MM-dd.md`。
 
-### 手动归档某一天
-
-在项目根目录打开 PowerShell，运行：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\archive-daily-note.ps1 -NoteDate 2026-06-19
-```
-
-它会把 `data/daily-notes/2026-06-19.md` 自动写入 `data/entries.js` 的实习记录和成长时间线，并在 `data/backups/` 里备份旧版 `entries.js`。
-
 ### 安装每天凌晨 4 点自动归档并上传 GitHub
 
 在项目根目录打开 PowerShell，运行：
