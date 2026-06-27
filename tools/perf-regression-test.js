@@ -100,3 +100,18 @@ test("decorative infinite animations are disabled by default", () => {
     "decorative infinite animations should not run by default"
   );
 });
+
+test("lightweight reveal animations use CSS transitions and observer classes", () => {
+  assert(
+    /\.reveal\.is-visible/.test(css),
+    "CSS should define a visible reveal state"
+  );
+  assert(
+    /transition\s*:\s*opacity/.test(css),
+    "reveal animation should use lightweight opacity/transform transitions"
+  );
+  assert(
+    /classList\.add\(\s*["']is-visible["']\s*\)/.test(source),
+    "IntersectionObserver should reveal elements by adding is-visible"
+  );
+});

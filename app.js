@@ -1069,17 +1069,19 @@ function bindTiltCards() {
 function setupAnimations() {
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
     $$(".reveal").forEach((item) => {
-      item.style.opacity = 1;
-      item.style.transform = "none";
+      item.classList.add("is-visible");
     });
     return;
   }
 
+  $$(".reveal").forEach((item, index) => {
+    item.style.transitionDelay = `${Math.min(index * 35, 180)}ms`;
+  });
+
   const observer = new IntersectionObserver((items) => {
     items.forEach((item) => {
       if (item.isIntersecting) {
-        item.target.style.opacity = 1;
-        item.target.style.transform = "translateY(0)";
+        item.target.classList.add("is-visible");
         observer.unobserve(item.target);
       }
     });
