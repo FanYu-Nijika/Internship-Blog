@@ -26,6 +26,10 @@ const formatDate = (dateString) => {
 const uniqueTypes = ["全部", ...new Set(entries.map((item) => item.type))];
 let activeType = "全部";
 let searchKeyword = "";
+const searchableEntries = entries.map((item) => ({
+  item,
+  haystack: [item.title, item.summary, item.type, item.project, item.result, ...item.tags].join(" ").toLowerCase()
+}));
 
 function renderStats() {
   const techSet = new Set(entries.flatMap((item) => item.tags));
@@ -51,24 +55,28 @@ function renderFilters() {
   const wrapper = $("#filterChips");
   if (!wrapper) return;
   wrapper.innerHTML = uniqueTypes.map((type) => `<button class="chip ${type === activeType ? "active" : ""}" data-type="${escapeHtml(type)}" type="button">${escapeHtml(type)}</button>`).join("");
+}
+
+function setupFilters() {
+  const wrapper = $("#filterChips");
+  if (!wrapper) return;
   wrapper.addEventListener("click", (event) => {
     const button = event.target.closest(".chip");
     if (!button) return;
     activeType = button.dataset.type;
     renderFilters();
     renderPosts();
-  }, { once: true });
+  });
 }
 
 function renderPosts() {
   const grid = $("#postGrid");
   if (!grid) return;
   const keyword = searchKeyword.trim().toLowerCase();
-  const filtered = entries.filter((item) => {
+  const filtered = searchableEntries.filter(({ item, haystack }) => {
     const matchType = activeType === "全部" || item.type === activeType;
-    const haystack = [item.title, item.summary, item.type, item.project, item.result, ...item.tags].join(" ").toLowerCase();
     return matchType && haystack.includes(keyword);
-  });
+  }).map(({ item }) => item);
 
   if (!filtered.length) {
     grid.innerHTML = `<div class="empty-state">暂时没找到匹配记录。可以换个关键词，或者把今天的内容先写进“今日速记”。</div>`;
@@ -76,7 +84,7 @@ function renderPosts() {
   }
 
   grid.innerHTML = filtered.map((item) => `
-    <article class="post-card glass tilt-card">
+    <article class="post-card glass">
       <div class="post-meta"><time>${formatDate(item.date)}</time><span class="type-pill">${escapeHtml(item.type)}</span></div>
       <h3>${escapeHtml(item.title)}</h3>
       <p>${escapeHtml(item.summary)}</p>
@@ -257,9 +265,11 @@ function setupTimelineEditor() {
 function setupSearch() {
   const input = $("#searchInput");
   if (!input) return;
+  let renderFrame = 0;
   input.addEventListener("input", (event) => {
     searchKeyword = event.target.value;
-    renderPosts();
+    cancelAnimationFrame(renderFrame);
+    renderFrame = requestAnimationFrame(renderPosts);
   });
 }
 
@@ -1029,47 +1039,38 @@ function bindTiltCards() {
   $$(".tilt-card").forEach((card) => {
     if (card.dataset.tiltBound) return;
     card.dataset.tiltBound = "true";
+    let rect = null;
+    let nextTransform = "";
+    let frame = 0;
+
+    card.addEventListener("pointerenter", () => {
+      rect = card.getBoundingClientRect();
+    });
     card.addEventListener("pointermove", (event) => {
-      const rect = card.getBoundingClientRect();
+      rect = rect || card.getBoundingClientRect();
       const x = (event.clientX - rect.left) / rect.width - 0.5;
       const y = (event.clientY - rect.top) / rect.height - 0.5;
-      card.style.transform = `perspective(900px) rotateX(${y * -5}deg) rotateY(${x * 7}deg) translateY(-4px)`;
+      nextTransform = `perspective(900px) rotateX(${y * -5}deg) rotateY(${x * 7}deg) translateY(-4px)`;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        card.style.transform = nextTransform;
+        frame = 0;
+      });
     });
     card.addEventListener("pointerleave", () => {
+      rect = null;
+      cancelAnimationFrame(frame);
+      frame = 0;
       card.style.transform = "";
     });
   });
 }
 
 function setupAnimations() {
-  if (window.gsap && window.ScrollTrigger) {
-    gsap.registerPlugin(window.ScrollTrigger);
-    gsap.to(".reveal", {
-      opacity: 1,
-      y: 0,
-      duration: 0.85,
-      ease: "power3.out",
-      stagger: 0.08,
-      scrollTrigger: {
-        trigger: "body",
-        start: "top 80%"
-      }
-    });
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
     $$(".reveal").forEach((item) => {
-      gsap.to(item, {
-        opacity: 1,
-        y: 0,
-        duration: 0.85,
-        ease: "power3.out",
-        scrollTrigger: { trigger: item, start: "top 86%" }
-      });
-    });
-    gsap.from(".bar i", {
-      scaleX: 0,
-      duration: 1.2,
-      ease: "power3.out",
-      transformOrigin: "left",
-      scrollTrigger: { trigger: ".skill-board", start: "top 80%" }
+      item.style.opacity = 1;
+      item.style.transform = "none";
     });
     return;
   }
@@ -1101,6 +1102,7 @@ function toast(message) {
 
 renderStats();
 renderFilters();
+setupFilters();
 renderPosts();
 renderTechCloud();
 setupTimelineEditor();

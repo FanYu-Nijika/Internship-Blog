@@ -1,6 +1,6 @@
 :root {
   --cream: #fff8ee;
-  --paper: rgba(255, 252, 246, 0.78);
+  --paper: rgba(255, 252, 246, 0.94);
   --paper-strong: #fffaf2;
   --ink: #35251d;
   --muted: #8d6d5d;
@@ -11,8 +11,8 @@
   --honey: #ffd38a;
   --mint: #8dbd9c;
   --line: rgba(110, 65, 48, 0.13);
-  --shadow: 0 24px 70px rgba(116, 65, 34, 0.16);
-  --shadow-soft: 0 14px 36px rgba(116, 65, 34, 0.11);
+  --shadow: 0 16px 34px rgba(116, 65, 34, 0.11);
+  --shadow-soft: 0 10px 22px rgba(116, 65, 34, 0.08);
   --radius-xl: 34px;
   --radius-lg: 24px;
   --radius-md: 18px;
@@ -44,6 +44,7 @@ code {
 }
 
 .grain {
+  display: none;
   pointer-events: none;
   position: fixed;
   inset: 0;
@@ -54,14 +55,13 @@ code {
   mask-image: linear-gradient(to bottom, black 0%, transparent 92%);
 }
 .ambient {
+  display: none;
   position: fixed;
   z-index: -2;
   width: 29rem;
   height: 29rem;
   border-radius: 999px;
-  filter: blur(18px);
   opacity: .36;
-  animation: floatBlob 13s ease-in-out infinite alternate;
 }
 .ambient-one { left: -10rem; top: 10rem; background: #ffc078; }
 .ambient-two { right: -11rem; top: 42rem; background: #ef8170; animation-delay: -4s; }
@@ -73,7 +73,6 @@ code {
   border: 1px solid var(--line);
   background: var(--paper);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
 }
 .reveal { opacity: 0; transform: translateY(24px); }
 
@@ -91,9 +90,8 @@ code {
   gap: 1rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 250, 242, .74);
+  background: rgba(255, 250, 242, .96);
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(18px);
 }
 .brand { display: inline-flex; align-items: center; gap: .8rem; }
 .brand-mark {
@@ -204,7 +202,6 @@ h1, h2 { font-family: "Noto Serif SC", Inter, serif; }
   border-radius: 999px;
   background: var(--mint);
   box-shadow: 0 0 0 0 rgba(141, 189, 156, .8);
-  animation: pulse 1.8s infinite;
 }
 @keyframes pulse { 70% { box-shadow: 0 0 0 12px rgba(141, 189, 156, 0); } }
 .mini-window {
@@ -223,7 +220,6 @@ h1, h2 { font-family: "Noto Serif SC", Inter, serif; }
   width: var(--w);
   border-radius: 999px;
   background: linear-gradient(90deg, rgba(233,120,103,.42), rgba(216,137,75,.22));
-  animation: shimmer 2.4s ease-in-out infinite;
 }
 .code-lines span:nth-child(2) { animation-delay: -.4s; }
 .code-lines span:nth-child(3) { animation-delay: -.8s; }
@@ -232,8 +228,8 @@ h1, h2 { font-family: "Noto Serif SC", Inter, serif; }
 .stat-grid div { padding: 1rem .6rem; border-radius: 20px; background: rgba(255,255,255,.55); text-align: center; }
 .stat-grid strong { display: block; font-size: 1.8rem; color: var(--cocoa); line-height: 1; }
 .stat-grid small { color: var(--muted); font-weight: 900; font-size: .75rem; }
-.hero-illustration { position: absolute; left: 0; bottom: 0; width: min(460px, 100%); filter: drop-shadow(0 28px 38px rgba(116,65,34,.18)); }
-.floaty { animation: floaty 4.6s ease-in-out infinite alternate; }
+.hero-illustration { position: absolute; left: 0; bottom: 0; width: min(460px, 100%); }
+.floaty { transform: translateY(-6px); }
 @keyframes floaty { to { transform: translateY(-18px) rotate(-1.2deg); } }
 
 .intro-grid {
@@ -468,7 +464,7 @@ h1, h2 { font-family: "Noto Serif SC", Inter, serif; }
 }
 .video-shell iframe { width: 100%; height: 420px; border: 0; display: block; }
 .video-placeholder { padding: 1.2rem; text-align: center; }
-.video-placeholder img { width: min(310px, 80%); filter: drop-shadow(0 22px 30px rgba(0,0,0,.16)); animation: floaty 4.2s ease-in-out infinite alternate; }
+.video-placeholder img { width: min(310px, 80%); }
 .video-placeholder strong, .video-placeholder small { display: block; margin-top: .7rem; }
 .video-placeholder small { color: rgba(255,255,255,.72); }
 .hyper-control h3 { font-size: 1.5rem; }
