@@ -1,39 +1,6 @@
 window.INTERNSHIP_ENTRIES = [
   
-  
-  // LOCAL-DAILY-NOTE:2026-06-27 START
-  {
-      "id":  20260627,
-      "date":  "2026-06-27",
-      "type":  "学习心得",
-      "title":  "智能车好霸道的感觉，一天要将近12小时。。。",
-      "summary":  "如题",
-      "tags":  [
-                   "学习心得",
-                   "浏览器速记",
-                   "实习记录"
-               ],
-      "project":  "实习记录",
-      "result":  "已整理为学习心得：智能车好霸道的感觉，一天要将近12小时。。。",
-      "source":  "local-daily-note",
-      "sections":  [
-                       {
-                           "heading":  "今天做了什么",
-                           "items":  [
-                                         "21:16｜智能车好霸道的感觉，一天要将近12小时。。。（学习心得）",
-                                         "如题"
-                                     ]
-                       },
-                       {
-                           "heading":  "结果证据",
-                           "items":  [
-                                         "今日速记已写入 data/daily-notes/2026-06-27.md"
-                                     ]
-                       }
-                   ]
-  },
-  // LOCAL-DAILY-NOTE:2026-06-27 END
-// LOCAL-DAILY-NOTE:2026-06-24 START
+  // LOCAL-DAILY-NOTE:2026-06-24 START
   {
       "id":  20260624,
       "date":  "2026-06-24",
@@ -125,16 +92,7 @@ window.INTERNSHIP_ENTRIES = [
 
 window.INTERNSHIP_MILESTONES = [
   
-  
-  // LOCAL-DAILY-MILESTONE:2026-06-27 START
-  {
-      "id":  "daily-2026-06-27",
-      "date":  "06/27",
-      "title":  "智能车好霸道的感觉，一天要将近12小时。。。",
-      "detail":  "如题"
-  },
-  // LOCAL-DAILY-MILESTONE:2026-06-27 END
-// LOCAL-DAILY-MILESTONE:2026-06-24 START
+  // LOCAL-DAILY-MILESTONE:2026-06-24 START
   {
       "id":  "daily-2026-06-24",
       "date":  "06/24",
